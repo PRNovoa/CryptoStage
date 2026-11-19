@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f3ee" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171c19" media="(prefers-color-scheme: dark)" />
+    <title>CryptoStage</title>
+    <script>
+      // Apply saved theme and motion before first paint, so a dark choice never flashes light.
+      try {
+        var t = localStorage.getItem('cryptostage.theme'), m = localStorage.getItem('cryptostage.motion')
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
+        document.documentElement.dataset.motion = m === 'off' ? 'off' : 'on'
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

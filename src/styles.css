@@ -1,0 +1,955 @@
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+
+/* Editorial bank (see DESIGN.md): ink and champagne. Teal and brick mean market direction only.
+   Checked 2026-11-19: every text token is at least 4.9:1 on its background, the champagne line at
+   least 4.9:1, and both teal/brick pairs pass dataviz validate_palette.js. Re-check if a hex changes. */
+:root {
+  --bg: #f6f2eb;
+  --surface: #ffffff;
+  --ink: #242820;
+  --ink-2: #666a62;
+  --line: #dedbd3;
+  --selected: #efeae0;
+  --accent: #876239;
+  --up: #00826f;
+  --up-text: #00705f;
+  --down: #bc4a2e;
+  --down-text: #a8402a;
+
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --serif: Georgia, 'Times New Roman', serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  color-scheme: light;
+  accent-color: var(--accent);
+  scrollbar-color: var(--line) var(--bg);
+}
+
+:root[data-theme='dark'] {
+  --bg: #101820;
+  --surface: #18242d;
+  --ink: #f4efe5;
+  --ink-2: #abb7bd;
+  --line: #33424c;
+  --selected: #16212a;
+  --accent: #d8b77e;
+  --up: #1fa595;
+  --up-text: #1fa595;
+  --down: #d2714f;
+  --down-text: #d97b5a;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #101820;
+    --surface: #18242d;
+    --ink: #f4efe5;
+    --ink-2: #abb7bd;
+    --line: #33424c;
+    --selected: #16212a;
+    --accent: #d8b77e;
+    --up: #1fa595;
+    --up-text: #1fa595;
+    --down: #d2714f;
+    --down-text: #d97b5a;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.5 var(--sans);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+input {
+  caret-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+h1, h2, h3, p, dl, dd, fieldset {
+  margin: 0;
+}
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+a,
+summary,
+label {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Controls: fine rules, square corners, 140 ms colour and press feedback. */
+button {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.4rem 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-out), border-color 140ms ease, color 140ms ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+button:disabled {
+  cursor: not-allowed;
+  color: var(--ink-2);
+  border-style: dotted;
+}
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+}
+
+a {
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  transition: text-decoration-thickness 140ms ease, color 140ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+.skip {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  background: var(--surface);
+  padding: 8px 12px;
+  z-index: 2;
+}
+.skip:focus {
+  top: 8px;
+}
+
+/* Page */
+.app {
+  position: relative;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 48px 48px 32px;
+  isolation: isolate;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  column-gap: 64px;
+  align-items: start;
+}
+
+/* Watchlist */
+.watch-head {
+  margin-bottom: 20px;
+}
+.watch-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+.watch-title:focus {
+  outline: none;
+}
+
+.conn {
+  font-size: 0.875rem;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--down-text);
+}
+.conn[data-status='live'] {
+  display: none;
+}
+.conn-detail {
+  color: var(--ink-2);
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.picker input {
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0.45rem 0;
+  transition: border-color 140ms ease;
+}
+.picker input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+.picker input::placeholder {
+  color: var(--ink-2);
+}
+.picker-message {
+  grid-column: 1 / -1;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.picker input[aria-invalid] ~ .picker-message {
+  color: var(--down-text);
+}
+.watch-empty {
+  color: var(--ink-2);
+  padding: 8px 0 20px;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  transition: background-color 200ms ease;
+}
+.row[data-selected] {
+  background: var(--selected);
+}
+/* Two columns: identity over its sparkline on the left, price over its signed change on the right. */
+.row-select {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'name price' 'spark change' 'age age';
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 6px;
+  min-height: 76px;
+  border: 0;
+  background: transparent;
+  padding: 14px 4px 14px 12px;
+  text-align: left;
+  font-weight: 400;
+}
+.row-select:active:not(:disabled) {
+  transform: none;
+}
+.row-name {
+  grid-area: name;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms ease;
+}
+.row[data-selected] .row-name {
+  border-bottom-color: var(--accent);
+}
+.row-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row[data-selected] .row-title {
+  font-weight: 600;
+}
+.row-ticker {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.row[data-selected] .row-ticker {
+  color: var(--accent);
+}
+.spark {
+  grid-area: spark;
+  width: 104px;
+  height: 18px;
+}
+/* Neutral on purpose: the sparkline covers minutes and the change covers 24 h. */
+.spark polyline {
+  stroke: var(--ink-2);
+  stroke-width: 1.25;
+}
+.row-price {
+  grid-area: price;
+  justify-self: end;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.row-waiting {
+  grid-area: price;
+  justify-self: end;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+.row-age {
+  grid-area: age;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.row-remove {
+  border: 0;
+  color: var(--ink-2);
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+}
+@media (hover: hover) and (pointer: fine) {
+  .row-remove {
+    opacity: 0;
+    transition: opacity 140ms ease;
+  }
+  .row:hover .row-remove,
+  .row-remove:focus-visible,
+  .row[data-selected] .row-remove {
+    opacity: 1;
+  }
+  .row-remove:hover:not(:disabled) {
+    color: var(--ink);
+  }
+}
+
+.change {
+  grid-area: change;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+.change[data-dir='up'] {
+  color: var(--up-text);
+}
+.change[data-dir='down'] {
+  color: var(--down-text);
+}
+.icon {
+  flex: none;
+}
+
+/* Quotes change at once, with a 250 ms directional tint. */
+[data-tick='up'] {
+  animation: tick-up 250ms ease-out;
+}
+[data-tick='down'] {
+  animation: tick-down 250ms ease-out;
+}
+@keyframes tick-up {
+  from { color: var(--up-text); }
+}
+@keyframes tick-down {
+  from { color: var(--down-text); }
+}
+
+/* Selected asset */
+.detail {
+  min-width: 0;
+}
+.detail-empty {
+  color: var(--ink-2);
+}
+/* Arrival and selection: identity, quote and charts move as one block. */
+.detail-body {
+  display: grid;
+  gap: 40px;
+  animation: arrive 280ms var(--ease-out);
+}
+.board .detail-slot {
+  animation: reveal 520ms var(--ease-out);
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.watch {
+  animation: reveal 520ms var(--ease-out);
+}
+.detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  padding: 4px 8px 4px 0;
+  margin-bottom: 20px;
+  color: var(--ink-2);
+}
+.detail-top {
+  display: grid;
+  gap: 24px;
+}
+.detail-title {
+  font: 400 80px / 0.95 var(--serif);
+  letter-spacing: -0.02em;
+}
+.detail-title:focus {
+  outline: none;
+}
+.detail-sub {
+  margin-top: 12px;
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.detail-quote {
+  display: grid;
+  gap: 16px;
+  align-content: end;
+}
+.detail-price {
+  font-size: 64px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  min-height: 1em;
+}
+.detail-waiting {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--ink-2);
+  letter-spacing: 0;
+}
+.detail-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  font-size: 0.9375rem;
+}
+.detail-facts dt {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.detail-subtitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  margin-bottom: 20px;
+}
+@media (min-width: 1280px) {
+  .detail-top {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: 48px;
+  }
+  .detail-quote {
+    justify-items: end;
+    text-align: right;
+  }
+}
+
+/* Session chart: the signature visual. A champagne line on the page, no fill. */
+.chart {
+  margin: 0;
+}
+.chart-plot {
+  position: relative;
+  height: 280px;
+  margin-right: 88px;
+  touch-action: pan-y;
+}
+.chart-plot svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart-cross {
+  stroke: var(--ink-2);
+  stroke-width: 1;
+}
+.chart-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  pointer-events: none;
+}
+.chart-tick {
+  position: absolute;
+  left: 100%;
+  margin-left: 14px;
+  transform: translateY(-50%);
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+.chart-times {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 88px 0 0;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.chart-tip {
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -115%);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 3px 8px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.chart-tip[data-align='start'] {
+  transform: translate(0, -115%);
+}
+.chart-tip[data-align='end'] {
+  transform: translate(-100%, -115%);
+}
+.chart-empty {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+/* Market depth: compact, with the spread centred between the two sides. */
+.depth {
+  display: grid;
+  gap: 20px;
+}
+.depth-summary {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.depth-summary > :nth-child(2) {
+  text-align: center;
+}
+.depth-summary > :nth-child(3) {
+  text-align: right;
+}
+.depth-summary dt {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.depth-summary dd {
+  font-size: 1.0625rem;
+  font-weight: 500;
+}
+.depth-summary .bid {
+  color: var(--up-text);
+}
+.depth-summary .ask {
+  color: var(--down-text);
+}
+.depth-figure {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-areas: 'y plot' '. x' '. readout' '. range';
+  column-gap: 12px;
+}
+.depth-y {
+  grid-area: y;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  text-align: right;
+}
+.depth-x {
+  grid-area: x;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+}
+.depth-axis-name {
+  color: var(--ink-2);
+  font-size: 0.75rem;
+}
+.depth-plot {
+  grid-area: plot;
+  position: relative;
+  height: 160px;
+}
+.depth-plot svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.depth-base {
+  stroke: var(--line);
+}
+.depth-bids,
+.depth-asks {
+  stroke-width: 1.5;
+  transition: d 180ms var(--ease-out);
+}
+.depth-bids {
+  fill: color-mix(in srgb, var(--up) 14%, transparent);
+  stroke: var(--up);
+}
+.depth-asks {
+  fill: color-mix(in srgb, var(--down) 14%, transparent);
+  stroke: var(--down);
+}
+.depth-cross {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+.depth-side {
+  position: absolute;
+  top: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.depth-side[data-side='bids'] {
+  left: 6px;
+  color: var(--up-text);
+}
+.depth-side[data-side='asks'] {
+  right: 6px;
+  color: var(--down-text);
+}
+.depth-readout {
+  grid-area: readout;
+  min-height: 1.5em;
+  margin-top: 10px;
+  font-size: 0.875rem;
+}
+.depth-range {
+  grid-area: range;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.book-error {
+  color: var(--down-text);
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+.book-error:empty {
+  display: none;
+}
+.book-empty {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.levels-disclosure summary {
+  cursor: pointer;
+  font-weight: 500;
+  width: fit-content;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.28em;
+}
+.levels-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 16px;
+}
+.levels {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.levels caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 6px;
+}
+.levels th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.levels th:last-child,
+.levels td:last-child {
+  text-align: right;
+}
+.levels td {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Utility area: theme, motion and demo controls, quiet at the foot of the page. */
+.utility {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+  margin-top: 72px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+.utility-name {
+  font: 400 1.125rem/1 var(--serif);
+  margin-right: auto;
+}
+.prefs,
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+.utility button {
+  font-size: 0.875rem;
+  padding: 0.3rem 0.7rem;
+}
+.demo-label {
+  color: var(--accent);
+  font-weight: 500;
+}
+.segmented {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  padding: 0;
+}
+.segmented legend {
+  float: left;
+  margin-right: 8px;
+  color: var(--ink-2);
+}
+.segmented label {
+  cursor: pointer;
+}
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.segmented span {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-bottom: 1px solid transparent;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+.segmented input:checked + span {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.toggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.gap-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.control-note {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+.start-error {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 48px 20px;
+}
+
+/* Tablet and phone: list and detail are separate views; the quote stacks under the identity. */
+@media (max-width: 1023px) {
+  .app {
+    padding: 24px 20px;
+  }
+  .board {
+    display: flex;
+    column-gap: 0; /* the desktop gap would offset the sliding views */
+    overflow-x: clip;
+    align-items: flex-start;
+  }
+  .watch,
+  .detail-slot {
+    flex: 0 0 100%;
+    min-width: 0;
+    transition: transform 280ms var(--ease-out);
+  }
+  .board[data-view='detail'] .watch,
+  .board[data-view='detail'] .detail-slot {
+    transform: translateX(-100%);
+  }
+  .board[data-view='detail'] .watch,
+  .board[data-view='list'] .detail-slot {
+    max-height: 0;
+    overflow: hidden;
+  }
+  .detail-title {
+    font-size: 56px;
+  }
+  .detail-price {
+    font-size: 52px;
+  }
+  .chart-plot {
+    height: 220px;
+    margin-right: 0;
+  }
+  .chart-tick {
+    left: auto;
+    right: 0;
+    margin: 0;
+    transform: translateY(-120%);
+    background: var(--bg);
+    padding-left: 6px;
+  }
+  .chart-times {
+    margin-right: 0;
+  }
+  .depth-figure {
+    grid-template-columns: 48px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+  .depth-y .depth-axis-name {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+  .levels-pair {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .utility {
+    margin-top: 48px;
+  }
+  .utility-name {
+    width: 100%;
+  }
+}
+@media (max-width: 639px) {
+  .detail-title {
+    font-size: 44px;
+    line-height: 1;
+  }
+  .detail-price {
+    font-size: 44px;
+  }
+  .depth-summary {
+    grid-template-columns: 1fr;
+  }
+  .depth-summary > div {
+    display: flex;
+    justify-content: space-between;
+    text-align: left !important;
+  }
+}
+
+/* Motion off (the page control) or reduced motion (the system): no drift, slides or reveals. */
+:root[data-motion='off'] .watch,
+:root[data-motion='off'] .board .detail-slot,
+:root[data-motion='off'] .detail-body {
+  animation: none;
+}
+:root[data-motion='off'] .watch,
+:root[data-motion='off'] .detail-slot,
+:root[data-motion='off'] .depth-bids,
+:root[data-motion='off'] .depth-asks,
+:root[data-motion='off'] button {
+  transition: none;
+}
+:root[data-motion='off'] button:active:not(:disabled) {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .watch,
+  .board .detail-slot,
+  .detail-body {
+    animation: none;
+  }
+  .watch,
+  .detail-slot,
+  .depth-bids,
+  .depth-asks,
+  button {
+    transition: none;
+  }
+  button:active:not(:disabled) {
+    transform: none;
+  }
+}
